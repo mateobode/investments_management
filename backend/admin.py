@@ -1,3 +1,7 @@
 from django.contrib import admin
+from backend.models.loan import Loan
+from backend.models.cashflow import Cashflow
 
-# Register your models here.
+
+admin.site.register(Loan)
+admin.site.register(Cashflow)
