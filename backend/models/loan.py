@@ -45,7 +45,6 @@ class Loan(models.Model):
 
     @property
     def realized_irr(self):
-        # TODO: consult someone if this formula is correct
         if not self.is_closed:
             return 0
 
