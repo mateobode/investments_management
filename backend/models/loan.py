@@ -17,11 +17,11 @@ class Loan(models.Model):
 
     @property
     def invested_amount(self):
-        return self.cash_flows.filter(type="funding").aggregate(Sum('amount')).get("amount__sum")
+        return self.cash_flows.filter(type="Funding").aggregate(Sum('amount')).get("amount__sum")
 
     @property
     def investment_date(self):
-        return self.cash_flows.filter(type="funding").order_by("reference_date").first().reference_date
+        return self.cash_flows.filter(type="Funding").order_by("reference_date").first().reference_date
 
     @property
     def expected_interest_amount(self):
@@ -29,29 +29,31 @@ class Loan(models.Model):
 
     @property
     def is_closed(self):
-        if self.cash_flows.filter(type="repayment").aggregate(Sum("amount")).get('amount__sum') is None:
-            return 0
+        repayments_sum = self.cash_flows.filter(type="Repayment").aggregate(Sum("amount")).get('amount__sum') or 0
+
+        if repayments_sum >= (abs(self.invested_amount) + self.expected_interest_amount):
+            return True
         else:
-            if self.cash_flows.filter(type="repayment").aggregate(Sum("amount")).get('amount__sum') >= \
-                    (self.invested_amount + self.expected_interest_amount):
-                return True
-            else:
-                return False
+            return False
 
     @property
     def expected_irr(self):
-        funding_amount = self.cash_flows.filter(type="funding").values_list("amount").get()[0]
+        funding_amount = self.cash_flows.filter(type="Funding").values_list("amount").get()[0]
         expected_repayment_amount = abs(self.invested_amount) + self.expected_interest_amount
         expected_irr = {self.investment_date: funding_amount, self.maturity_date: expected_repayment_amount}
         return xirr(expected_irr)
 
     @property
     def realized_irr(self):
-        if self.is_closed:
-            funding_amount = self.cash_flows.filter(type="funding").values_list("amount").get()[0]
-            repayment_reference_date, repayment_amount = self.cash_flows.filter(type="repayment").values_list(
-                "reference_date",
-                "amount"
-            )[0]
-            realized_irr = {self.investment_date: funding_amount, repayment_reference_date: repayment_amount}
-            return xirr(realized_irr)
+        # TODO: consult someone if this formula is correct
+        if not self.is_closed:
+            return 0
+
+        first_repayment = self.cash_flows.filter(type="Repayment").first()
+
+        if not first_repayment:
+            return 0
+
+        funding_amount = self.cash_flows.filter(type="Funding").values_list("amount").get()[0]
+        realized_irr = {self.investment_date: funding_amount, first_repayment.reference_date: first_repayment.amount}
+        return xirr(realized_irr)
