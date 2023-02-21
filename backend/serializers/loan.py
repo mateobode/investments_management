@@ -7,6 +7,16 @@ class LoanSerializer(serializers.ModelSerializer):
         model = Loan
         fields = "__all__"
 
+    def save(self, **kwargs):
+        instance = super(LoanSerializer, self).save()
+        # instance.invested_amount
+        # instance.investment_date
+        # instance.expected_interest_amount
+        # instance.is_closed
+        # instance.expected_irr
+        # instance.realized_irr
+        return instance
+
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["invested_amount"] = instance.invested_amount

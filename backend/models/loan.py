@@ -1,7 +1,6 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Sum
-from django.db.models.functions import Cast
 from xirr.math import xirr
 
 
@@ -14,7 +13,7 @@ class Loan(models.Model):
     total_expected_interest_amount = models.FloatField()
 
     def __str__(self):
-         return self.identifier
+        return self.identifier
 
     @property
     def invested_amount(self):
@@ -30,12 +29,14 @@ class Loan(models.Model):
 
     @property
     def is_closed(self):
-        if self.cash_flows.filter(type="repayment").aggregate(
-                Sum("amount")
-        ).get('amount__sum') >= (self.invested_amount + self.expected_interest_amount):
-            return True
+        if self.cash_flows.filter(type="repayment").aggregate(Sum("amount")).get('amount__sum') is None:
+            return 0
         else:
-            return False
+            if self.cash_flows.filter(type="repayment").aggregate(Sum("amount")).get('amount__sum') >= \
+                    (self.invested_amount + self.expected_interest_amount):
+                return True
+            else:
+                return False
 
     @property
     def expected_irr(self):
