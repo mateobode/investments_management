@@ -23,5 +23,5 @@ COPY . /usr/src/app
 #ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
 #run project through cli
-CMD ["python", "manage.py", "migrate"]
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+#CMD ["python", "manage.py", "migrate"]
+#CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
