@@ -1,6 +1,5 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-
 from backend.views.cashflow import CashFlowViewSet
 from backend.views.csv_upload import csv_upload
 from backend.views.loan import LoanViewSet
