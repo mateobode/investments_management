@@ -1,14 +1,17 @@
 from django.db.models import Sum
-from django.dispatch import receiver
 from rest_framework.decorators import action
 from rest_framework.response import Response
+import logging
 
 from backend.serializers.loan import LoanSerializer
 from backend.models.loan import Loan
-from backend.models.cashflow import Cashflow
 from rest_framework import viewsets
 from django.core.cache import cache
 from django.db.models.signals import post_save
+
+from backend.signals import invalidate_statistics
+
+logger = logging.getLogger(__name__)
 
 
 class LoanViewSet(viewsets.ModelViewSet):
@@ -18,11 +21,6 @@ class LoanViewSet(viewsets.ModelViewSet):
 
     @action(detail=False)
     def get_statistics(self, request):
-
-        investment_statistics = cache.get('statistics')
-        if investment_statistics is not None:
-            return Response(investment_statistics)
-
         nr_of_loans = Loan.objects.all().count()
 
         total_invested_amount_sum = 0
@@ -55,12 +53,13 @@ class LoanViewSet(viewsets.ModelViewSet):
             'Average realized irr': average_realized_irr
         }
 
-        cache.set('statistics', investment_statistics)
+        logger.debug(f"investment_statistics={investments_statistics}")
 
+        try:
+            cache.set('statistics',investments_statistics)
+        except Exception as e:
+            logger.error(f"Error setting cache value: {e}")
         return Response(investments_statistics)
 
 
-@receiver(post_save, sender=Loan)
-@receiver(post_save, sender=Cashflow)
-def invalidate_statistics(sender, **kwargs):
-    cache.delete('statistics')
+post_save.connect(invalidate_statistics)
